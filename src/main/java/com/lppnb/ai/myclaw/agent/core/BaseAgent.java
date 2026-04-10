@@ -80,9 +80,9 @@ public abstract class BaseAgent {
         try {
             while (currentStep < maxSteps && state != AgentState.FINISHED) {
                 currentStep++;
-                log.info("Agent [{}] executing step {}/{}", name, currentStep + 1, maxSteps);
+                log.info("Agent [{}] executing step {}/{}", name, currentStep, maxSteps);
                 String result = step();
-                log.debug("Agent [{}] step {} result: {}", name, currentStep + 1, result);
+                log.debug("Agent [{}] step {} result: {}", name, currentStep, result);
                 results.add(result);
             }
             if (currentStep >= maxSteps && state != AgentState.FINISHED) {
@@ -92,7 +92,7 @@ public abstract class BaseAgent {
             log.info("Agent [{}] run finished successfully.", name);
         } catch (Exception e) {
             state = AgentState.FINISHED;
-            log.error("Agent [{}] encountered an error during execution at step {}: ", name, currentStep + 1, e);
+            log.error("Agent [{}] encountered an error during execution at step {}: ", name, currentStep, e);
             results.add("Error occurred: " + e.getMessage());
         }
         return String.join("\n", results);

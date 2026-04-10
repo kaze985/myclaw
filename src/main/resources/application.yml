@@ -6,7 +6,7 @@ spring:
       api-key: ${AI_DASHSCOPE_API_KEY}
       chat:
         options:
-          model: qwen3.6-plus
+          model: qwen-plus
 # springdoc-openapi项目配置
 springdoc:
   swagger-ui:

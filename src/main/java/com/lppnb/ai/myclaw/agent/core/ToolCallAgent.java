@@ -60,7 +60,7 @@ public class ToolCallAgent extends ReActAgent {
         Prompt prompt = new Prompt(getContextMessages(), chatOptions);
         ChatResponse chatResponse = getChatClient().prompt(prompt)
                 .system(getSystemPrompt())
-                .tools((Object[]) availableTools)
+                .toolCallbacks(availableTools)
                 .call()
                 .chatResponse();
         this.toolCallChatResponse = chatResponse;

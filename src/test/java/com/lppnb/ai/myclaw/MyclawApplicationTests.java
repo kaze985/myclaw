@@ -1,5 +1,6 @@
 package com.lppnb.ai.myclaw;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,9 +15,10 @@ class MyclawApplicationTests {
 
     @Test
     void chatWithMyClaw() {
-        myClaw.run("""
+        String result = myClaw.run("""
                 1 + 1 = ?
                 """);
+        Assertions.assertNotNull(result);
     }
 
 }
