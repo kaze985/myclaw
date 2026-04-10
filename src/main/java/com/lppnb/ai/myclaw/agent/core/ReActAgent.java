@@ -30,10 +30,15 @@ public abstract class ReActAgent extends BaseAgent{
      */
     @Override
     protected String step() {
+        log.info("Agent [{}] starting think phase.", getName());
         boolean shouldAct = think();
         if(!shouldAct){
+            log.info("Agent [{}] think phase determined no action is needed.", getName());
             return "think step finished, no need to act.";
         }
-        return act();
+        log.info("Agent [{}] starting act phase.", getName());
+        String actResult = act();
+        log.info("Agent [{}] act phase completed.", getName());
+        return actResult;
     }
 }
