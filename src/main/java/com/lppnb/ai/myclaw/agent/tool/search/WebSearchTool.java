@@ -19,7 +19,7 @@ import org.springframework.util.StringUtils;
 @Component
 public class WebSearchTool {
 
-    @Value("${tools.tavily.api-key:}")
+    @Value("${tools.tavily.api-key}")
     private String apiKey;
 
     private static final String TAVILY_API_URL = "https://api.tavily.com/search";
