@@ -16,7 +16,7 @@ class MyclawApplicationTests {
     @Test
     void chatWithMyClaw() {
         String result = myClaw.run("""
-               搜索魔女之旅伊蕾娜的图片并下载
+               
                """);
         Assertions.assertNotNull(result);
     }

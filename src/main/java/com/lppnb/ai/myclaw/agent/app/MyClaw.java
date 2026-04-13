@@ -19,6 +19,7 @@ public class MyClaw extends ToolCallAgent {
         String SYSTEM_PROMPT = """
                 You are myclaw, an all-capable AI assistant, aimed at solving any task presented by the user.
                 You have various tools at your disposal that you can call upon to efficiently complete complex requests.
+                Always respond in 中文.
                 """;
         this.setSystemPrompt(SYSTEM_PROMPT);
         String NEXT_STEP_PROMPT = """
