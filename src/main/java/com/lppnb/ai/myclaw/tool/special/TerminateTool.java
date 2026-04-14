@@ -1,4 +1,4 @@
-package com.lppnb.ai.myclaw.agent.tool.special;
+package com.lppnb.ai.myclaw.tool.special;
 
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;

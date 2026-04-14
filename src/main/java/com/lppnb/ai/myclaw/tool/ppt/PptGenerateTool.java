@@ -1,4 +1,4 @@
-package com.lppnb.ai.myclaw.agent.tool.ppt;
+package com.lppnb.ai.myclaw.tool.ppt;
 
 import jakarta.annotation.PostConstruct;
 import lombok.Data;

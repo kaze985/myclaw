@@ -28,6 +28,11 @@ server:
   servlet:
     context-path: /api
   port: 8080
+gateway:
+  feishu:
+    app-id: ${FEISHU_APP_ID}
+    app-secret: ${FEISHU_APP_SECRET}
+    enabled: true
 tools:
   tavily:
     api-key: ${TAVILY_API_KEY}

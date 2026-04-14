@@ -1,20 +1,20 @@
-package com.lppnb.ai.myclaw.agent.tool;
+package com.lppnb.ai.myclaw.tool;
 
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.lppnb.ai.myclaw.agent.tool.download.ResourceDownloadTool;
-import com.lppnb.ai.myclaw.agent.tool.excel.ExcelGenerateTool;
-import com.lppnb.ai.myclaw.agent.tool.file.SandboxedFileOpsTool;
-import com.lppnb.ai.myclaw.agent.tool.pdf.PdfGenerateTool;
-import com.lppnb.ai.myclaw.agent.tool.ppt.PptGenerateTool;
-import com.lppnb.ai.myclaw.agent.tool.scrape.WebScrapeTool;
-import com.lppnb.ai.myclaw.agent.tool.search.WebSearchTool;
-import com.lppnb.ai.myclaw.agent.tool.special.TerminateTool;
-import com.lppnb.ai.myclaw.agent.tool.terminal.TerminalExecuteTool;
-import com.lppnb.ai.myclaw.agent.tool.word.WordGenerateTool;
+import com.lppnb.ai.myclaw.tool.download.ResourceDownloadTool;
+import com.lppnb.ai.myclaw.tool.excel.ExcelGenerateTool;
+import com.lppnb.ai.myclaw.tool.file.SandboxedFileOpsTool;
+import com.lppnb.ai.myclaw.tool.pdf.PdfGenerateTool;
+import com.lppnb.ai.myclaw.tool.ppt.PptGenerateTool;
+import com.lppnb.ai.myclaw.tool.scrape.WebScrapeTool;
+import com.lppnb.ai.myclaw.tool.search.WebSearchTool;
+import com.lppnb.ai.myclaw.tool.special.TerminateTool;
+import com.lppnb.ai.myclaw.tool.terminal.TerminalExecuteTool;
+import com.lppnb.ai.myclaw.tool.word.WordGenerateTool;
 
 /**
  * 工具统一注册入口：将所有 Agent 工具通过 ToolCallbacks.from() 注册到框架。

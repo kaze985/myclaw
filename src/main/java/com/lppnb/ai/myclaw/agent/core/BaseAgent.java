@@ -56,6 +56,11 @@ public abstract class BaseAgent {
      * 聊天客户端
      */
     private ChatClient chatClient;
+    /**
+     * 模型思考内容，用于记录每一步的输出结果，最终返回给用户
+     */
+    private List<String> reply = new ArrayList<>();
+
 
 
     /**
@@ -95,7 +100,7 @@ public abstract class BaseAgent {
             log.error("Agent [{}] encountered an error during execution at step {}: ", name, currentStep, e);
             results.add("Error occurred: " + e.getMessage());
         }
-        return String.join("\n", results);
+        return String.join("\n", reply);
     }
 
     /**

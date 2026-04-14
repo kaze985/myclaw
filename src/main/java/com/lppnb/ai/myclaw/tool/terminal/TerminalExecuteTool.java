@@ -1,4 +1,4 @@
-package com.lppnb.ai.myclaw.agent.tool.terminal;
+package com.lppnb.ai.myclaw.tool.terminal;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;

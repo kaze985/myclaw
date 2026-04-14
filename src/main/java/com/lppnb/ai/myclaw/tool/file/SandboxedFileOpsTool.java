@@ -1,4 +1,4 @@
-package com.lppnb.ai.myclaw.agent.tool.file;
+package com.lppnb.ai.myclaw.tool.file;
 
 import cn.hutool.core.io.FileUtil;
 import lombok.extern.slf4j.Slf4j;

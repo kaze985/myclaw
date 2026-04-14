@@ -1,4 +1,4 @@
-package com.lppnb.ai.myclaw.agent.tool.search;
+package com.lppnb.ai.myclaw.tool.search;
 
 import cn.hutool.http.HttpException;
 import cn.hutool.http.HttpRequest;

@@ -1,4 +1,4 @@
-package com.lppnb.ai.myclaw.agent.tool.excel;
+package com.lppnb.ai.myclaw.tool.excel;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;

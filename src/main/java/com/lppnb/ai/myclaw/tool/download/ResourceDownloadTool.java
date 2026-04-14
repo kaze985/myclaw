@@ -1,4 +1,4 @@
-package com.lppnb.ai.myclaw.agent.tool.download;
+package com.lppnb.ai.myclaw.tool.download;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.http.HttpUtil;

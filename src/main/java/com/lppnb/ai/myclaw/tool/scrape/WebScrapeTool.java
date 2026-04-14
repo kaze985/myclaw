@@ -1,4 +1,4 @@
-package com.lppnb.ai.myclaw.agent.tool.scrape;
+package com.lppnb.ai.myclaw.tool.scrape;
 
 import cn.hutool.http.HttpUtil;
 import com.microsoft.playwright.Browser;
