@@ -16,7 +16,7 @@
 - **THEN** Channel 实现 SHALL 将消息发送至对应平台的目标会话
 
 ### Requirement: 统一消息模型 GatewayMessage
-系统 SHALL 定义 `GatewayMessage` 作为入站和出站消息的统一数据模型，包含：`platform`（平台标识）、`sessionId`（会话 ID）、`senderId`（发送者 ID）、`content`（消息文本内容）、`rawPayload`（原始平台消息对象，可空）。
+系统 SHALL 定义 `GatewayMessage` 作为入站和出站消息的统一数据模型，包含：`platform`（平台标识）、`sessionId`（会话 ID）、`senderId`（发送者 ID）、`content`（消息文本内容）、`rawPayload`（原始平台消息对象，可空）、`onThought`（Agent 思考内容实时回调，可空）。
 
 #### Scenario: 入站消息转换
 - **WHEN** 收到来自任意平台的消息事件时
@@ -25,6 +25,17 @@
 #### Scenario: 出站消息构建
 - **WHEN** Agent 处理完成并需要回复时
 - **THEN** 系统 SHALL 通过 `GatewayMessage` 携带 sessionId、content 等信息，调用 Channel.send() 发送回复
+
+### Requirement: Agent 思考内容实时推送
+系统 SHALL 支持通过 `GatewayMessage.onThought` 回调，将 Agent 每次 `think` 阶段产生的文本内容实时推送至调用方（如通讯平台客户端）。
+
+#### Scenario: 实时推送思考内容
+- **WHEN** `GatewayMessage.onThought` 不为 null，且 Agent `think` 阶段产生文本输出时
+- **THEN** 系统 SHALL 立即调用 `onThought` 回调，将思考文本传递给调用方，无需等待整个 Agent 执行完毕
+
+#### Scenario: 回调为 null 时正常运行
+- **WHEN** `GatewayMessage.onThought` 为 null 时
+- **THEN** 系统 SHALL 正常执行 Agent，不触发任何回调，行为与无回调场景一致
 
 ### Requirement: MessageRouter 消息路由接口
 系统 SHALL 提供 `MessageRouter` 接口，将入站的 `GatewayMessage` 路由至 AI Agent 处理，并返回 Agent 回复内容。

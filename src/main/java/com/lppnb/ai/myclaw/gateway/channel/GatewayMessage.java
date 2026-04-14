@@ -3,6 +3,8 @@ package com.lppnb.ai.myclaw.gateway.channel;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.function.Consumer;
+
 /**
  * 统一入站/出站消息模型，屏蔽各平台差异。
  */
@@ -24,4 +26,10 @@ public class GatewayMessage {
 
     /** 原始平台消息对象，可空 */
     private Object rawPayload;
+
+    /**
+     * 模型每次 think 产生文本时的实时回调，可为 null。
+     * 用于将中间思考内容实时推送至客户端（如飞书）。
+     */
+    private Consumer<String> onThought;
 }

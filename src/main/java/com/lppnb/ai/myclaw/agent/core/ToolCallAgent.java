@@ -75,8 +75,10 @@ public class ToolCallAgent extends ReActAgent {
         
         String thought = assistantMessage.getText();
         if (StringUtils.isNotBlank(thought)) {
-            getReply().add(thought);
             log.info("Agent [{}] model thought:\n{}", getName(), thought);
+            if (getOnThought() != null) {
+                getOnThought().accept(thought);
+            }
         }
         
         if (assistantMessage.hasToolCalls()) {

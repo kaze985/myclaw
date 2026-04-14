@@ -2,6 +2,7 @@ package com.lppnb.ai.myclaw.agent.core;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.chat.client.ChatClient;
@@ -56,10 +57,13 @@ public abstract class BaseAgent {
      * 聊天客户端
      */
     private ChatClient chatClient;
+
     /**
-     * 模型思考内容，用于记录每一步的输出结果，最终返回给用户
+     * 模型思考内容回调，每次 think 阶段产生文本时触发，可用于实时推送中间思考内容。
+     * 为 null 时不触发。
      */
-    private List<String> reply = new ArrayList<>();
+    private Consumer<String> onThought;
+
 
 
 
@@ -81,14 +85,14 @@ public abstract class BaseAgent {
         state = AgentState.RUNNING;
         contextMessages.add(new UserMessage(prompt));
         // 3.agent loop
-        List<String> results = new ArrayList<>();
+        List<String> agentLoopResults = new ArrayList<>();
         try {
             while (currentStep < maxSteps && state != AgentState.FINISHED) {
                 currentStep++;
                 log.info("Agent [{}] executing step {}/{}", name, currentStep, maxSteps);
                 String result = step();
                 log.debug("Agent [{}] step {} result: {}", name, currentStep, result);
-                results.add(result);
+                agentLoopResults.add(result);
             }
             if (currentStep >= maxSteps && state != AgentState.FINISHED) {
                 log.warn("Agent [{}] Max steps ({}) exceeded", name, maxSteps);
@@ -98,9 +102,9 @@ public abstract class BaseAgent {
         } catch (Exception e) {
             state = AgentState.FINISHED;
             log.error("Agent [{}] encountered an error during execution at step {}: ", name, currentStep, e);
-            results.add("Error occurred: " + e.getMessage());
+            agentLoopResults.add("Error occurred: " + e.getMessage());
         }
-        return String.join("\n", reply);
+        return String.join("\n", agentLoopResults);
     }
 
     /**
