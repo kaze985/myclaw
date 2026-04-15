@@ -11,6 +11,7 @@ import com.lppnb.ai.myclaw.tool.file.SandboxedFileOpsTool;
 import com.lppnb.ai.myclaw.tool.pdf.PdfGenerateTool;
 import com.lppnb.ai.myclaw.tool.ppt.PptGenerateTool;
 import com.lppnb.ai.myclaw.tool.scrape.WebScrapeTool;
+import com.lppnb.ai.myclaw.tool.search.WallpaperSearchTool;
 import com.lppnb.ai.myclaw.tool.search.WebSearchTool;
 import com.lppnb.ai.myclaw.tool.special.TerminateTool;
 import com.lppnb.ai.myclaw.tool.terminal.TerminalExecuteTool;
@@ -25,6 +26,7 @@ import com.lppnb.ai.myclaw.tool.word.WordGenerateTool;
 @Configuration
 public class ToolRegistration {
 
+    private final WallpaperSearchTool wallpaperSearchTool;
     private final WebSearchTool webSearchTool;
     private final WebScrapeTool webScrapeTool;
     private final ResourceDownloadTool resourceDownloadTool;
@@ -36,7 +38,8 @@ public class ToolRegistration {
     private final ExcelGenerateTool excelGenerateTool;
     private final TerminateTool terminateTool;
 
-    public ToolRegistration(WebSearchTool webSearchTool,
+    public ToolRegistration(WallpaperSearchTool wallpaperSearchTool,
+                            WebSearchTool webSearchTool,
                             WebScrapeTool webScrapeTool,
                             ResourceDownloadTool resourceDownloadTool,
                             TerminalExecuteTool terminalExecuteTool,
@@ -46,6 +49,7 @@ public class ToolRegistration {
                             PptGenerateTool pptGenerateTool,
                             ExcelGenerateTool excelGenerateTool,
                             TerminateTool terminateTool) {
+        this.wallpaperSearchTool = wallpaperSearchTool;
         this.webSearchTool = webSearchTool;
         this.webScrapeTool = webScrapeTool;
         this.resourceDownloadTool = resourceDownloadTool;
@@ -63,6 +67,7 @@ public class ToolRegistration {
         return ToolCallbacks.from(
                 terminateTool,
                 webSearchTool,
+                wallpaperSearchTool,
                 webScrapeTool,
                 resourceDownloadTool,
                 terminalExecuteTool,
