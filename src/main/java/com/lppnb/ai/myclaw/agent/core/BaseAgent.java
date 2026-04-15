@@ -75,11 +75,11 @@ public abstract class BaseAgent {
         // 1.校验
         if (StringUtils.isBlank(prompt)) {
             log.warn("Agent [{}] Prompt is empty, skipping execution", name);
-            return "Prompt is empty";
+            return "提示词不能为空";
         }
         if (state != AgentState.IDLE) {
             log.warn("Agent [{}] is already running or finished, current state: {}, skipping execution", name, state);
-            return "Agent is already running or finished";
+            return "智能体当前状态不允许执行，请稍后再试";
         }
         // 2.更新状态和上下文
         state = AgentState.RUNNING;
@@ -102,9 +102,9 @@ public abstract class BaseAgent {
         } catch (Exception e) {
             state = AgentState.FINISHED;
             log.error("Agent [{}] encountered an error during execution at step {}: ", name, currentStep, e);
-            agentLoopResults.add("Error occurred: " + e.getMessage());
+            return "抱歉，处理您的消息时发生错误：" + e.getMessage();
         }
-        return String.join("\n", agentLoopResults);
+        return "";
     }
 
     /**

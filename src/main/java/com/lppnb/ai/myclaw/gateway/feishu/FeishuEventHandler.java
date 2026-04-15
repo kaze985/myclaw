@@ -2,6 +2,8 @@ package com.lppnb.ai.myclaw.gateway.feishu;
 
 import java.util.concurrent.CompletableFuture;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.lark.oapi.Client;
@@ -75,9 +77,11 @@ public class FeishuEventHandler {
 
         CompletableFuture.runAsync(() -> {
             try {
-                String agentLoopResults = messageRouter.route(gatewayMessage);
-                // route() 返回的是agent loop中每一步step的汇总结果，模型thought已通过回调逐条发送，所以此处就不发送了
-                log.debug("Agent run completed for messageId={}, agentLoopResults length={}", messageId, agentLoopResults == null ? 0 : agentLoopResults.length());
+                String agentResult = messageRouter.route(gatewayMessage);
+                if (StringUtils.isNotBlank(agentResult)) {
+                    replyMessage(messageId, agentResult);
+                }
+                log.debug("Agent run completed for messageId={}, agentResult length={}", messageId, agentResult == null ? 0 : agentResult.length());
             } catch (Exception e) {
                 log.error("Async agent processing failed for messageId={}: {}", messageId, e.getMessage(), e);
                 replyMessage(messageId, "抱歉，处理您的消息时发生异常：" + e.getMessage());
