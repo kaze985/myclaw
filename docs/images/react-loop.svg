@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" fill="none">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="720" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="1" stop-color="#1f2937"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="320" rx="16" fill="url(#bg2)"/>
+  <text x="360" y="36" text-anchor="middle" fill="#94a3b8" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600">ReAct Agent gLª¯</text>
+
+  <!-- Nodes -->
+  <rect x="40" y="110" width="120" height="64" rx="10" fill="#374151" stroke="#6b7280"/>
+  <text x="100" y="140" text-anchor="middle" fill="#f9fafb" font-size="13" font-weight="600">(7“e</text>
+  <text x="100" y="158" text-anchor="middle" fill="#9ca3af" font-size="10">UserMessage</text>
+
+  <rect x="210" y="110" width="120" height="64" rx="10" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2"/>
+  <text x="270" y="140" text-anchor="middle" fill="#eff6ff" font-size="13" font-weight="600">Think </text>
+  <text x="270" y="158" text-anchor="middle" fill="#bfdbfe" font-size="10">( LLM ³V</text>
+
+  <rect x="380" y="110" width="120" height="64" rx="10" fill="#047857" stroke="#34d399" stroke-width="2"/>
+  <text x="440" y="140" text-anchor="middle" fill="#ecfdf5" font-size="13" font-weight="600">Act L¨</text>
+  <text x="440" y="158" text-anchor="middle" fill="#a7f3d0" font-size="10">gL Tool Call</text>
+
+  <rect x="550" y="110" width="120" height="64" rx="10" fill="#7c2d12" stroke="#fb923c" stroke-width="2"/>
+  <text x="610" y="140" text-anchor="middle" fill="#fff7ed" font-size="13" font-weight="600">Observe Âß</text>
+  <text x="610" y="158" text-anchor="middle" fill="#fed7aa" font-size="10">åwÓœe
+‡</text>
+
+  <!-- Arrows forward -->
+  <path d="M160 142 H210" stroke="#60a5fa" stroke-width="2"/>
+  <polygon points="206,138 214,142 206,146" fill="#60a5fa"/>
+  <path d="M330 142 H380" stroke="#34d399" stroke-width="2"/>
+  <polygon points="376,138 384,142 376,146" fill="#34d399"/>
+  <path d="M500 142 H550" stroke="#fb923c" stroke-width="2"/>
+  <polygon points="546,138 554,142 546,146" fill="#fb923c"/>
+
+  <!-- Loop back -->
+  <path d="M610 174 C610 240 270 240 270 174" stroke="#818cf8" stroke-width="2" fill="none" stroke-dasharray="8 5"/>
+  <polygon points="266,178 274,174 270,186" fill="#818cf8"/>
+  <text x="440" y="262" text-anchor="middle" fill="#a5b4fc" font-size="11">*Œ ’ çíª¯ (maxSteps = 20)</text>
+
+  <!-- Finish -->
+  <rect x="280" y="210" width="160" height="48" rx="10" fill="#581c87" stroke="#c084fc" stroke-width="2"/>
+  <text x="360" y="232" text-anchor="middle" fill="#f3e8ff" font-size="12" font-weight="600">FINISHED</text>
+  <text x="360" y="248" text-anchor="middle" fill="#d8b4fe" font-size="10">àåw( / terminate / ¾ep
+P</text>
+  <path d="M270 142 C270 190 280 210 280 234" stroke="#c084fc" stroke-width="1.5" fill="none" stroke-dasharray="4 3"/>
+</svg>
