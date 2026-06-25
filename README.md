@@ -35,7 +35,7 @@
 ## 🏗️ 系统架构
 
 <p align="center">
-  <img src="docs/images/architecture.svg" alt="MyClaw 系统架构图" width="720"/>
+  <img src="docs/images/architecture.png" alt="MyClaw 系统架构图" width="720"/>
 </p>
 
 消息从飞书（或未来扩展的其他 Channel）进入 Gateway，由 `AgentMessageRouter` 路由至 `MyClaw` Agent。Agent 在 ReAct 循环中调用 DashScope 大模型决策，按需触发工具执行，最终将结果回复给用户。
@@ -57,7 +57,7 @@ flowchart LR
 ## 🔄 ReAct 执行循环
 
 <p align="center">
-  <img src="docs/images/react-loop.svg" alt="ReAct 执行循环" width="640"/>
+  <img src="docs/images/react-loop.png" alt="ReAct 执行循环" width="640"/>
 </p>
 
 Agent 每次收到用户消息后，进入如下循环，直到任务完成或达到步数上限：
