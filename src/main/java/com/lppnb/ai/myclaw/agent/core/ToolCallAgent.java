@@ -44,7 +44,7 @@ public class ToolCallAgent extends ReActAgent {
         this.chatOptions = DashScopeChatOptions.builder()
                 .internalToolExecutionEnabled(false)
                 .multiModel(true)
-                .model("qwen3.6-plus")
+                .model("qwen3.8-max")
                 .build();
     }
 

@@ -13,6 +13,7 @@ import com.lppnb.ai.myclaw.tool.ppt.PptGenerateTool;
 import com.lppnb.ai.myclaw.tool.scrape.WebScrapeTool;
 import com.lppnb.ai.myclaw.tool.search.WallpaperSearchTool;
 import com.lppnb.ai.myclaw.tool.search.WebSearchTool;
+import com.lppnb.ai.myclaw.tool.skill.LoadSkillTool;
 import com.lppnb.ai.myclaw.tool.special.TerminateTool;
 import com.lppnb.ai.myclaw.tool.terminal.TerminalExecuteTool;
 import com.lppnb.ai.myclaw.tool.word.WordGenerateTool;
@@ -37,6 +38,7 @@ public class ToolRegistration {
     private final PptGenerateTool pptGenerateTool;
     private final ExcelGenerateTool excelGenerateTool;
     private final TerminateTool terminateTool;
+    private final LoadSkillTool loadSkillTool;
 
     public ToolRegistration(WallpaperSearchTool wallpaperSearchTool,
                             WebSearchTool webSearchTool,
@@ -48,7 +50,8 @@ public class ToolRegistration {
                             WordGenerateTool wordGenerateTool,
                             PptGenerateTool pptGenerateTool,
                             ExcelGenerateTool excelGenerateTool,
-                            TerminateTool terminateTool) {
+                            TerminateTool terminateTool,
+                            LoadSkillTool loadSkillTool) {
         this.wallpaperSearchTool = wallpaperSearchTool;
         this.webSearchTool = webSearchTool;
         this.webScrapeTool = webScrapeTool;
@@ -60,6 +63,7 @@ public class ToolRegistration {
         this.pptGenerateTool = pptGenerateTool;
         this.excelGenerateTool = excelGenerateTool;
         this.terminateTool = terminateTool;
+        this.loadSkillTool = loadSkillTool;
     }
 
     @Bean
@@ -75,7 +79,8 @@ public class ToolRegistration {
                 pdfGenerateTool,
                 wordGenerateTool,
                 pptGenerateTool,
-                excelGenerateTool
+                excelGenerateTool,
+                loadSkillTool
         );
     }
 }

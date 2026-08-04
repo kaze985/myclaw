@@ -26,12 +26,30 @@ public class SandboxedFileOpsTool {
     /** 规范化路径并验证是否在沙盒范围内 */
     private boolean isPathSafe(String path) {
         try {
-            Path resolved = Paths.get(path).toAbsolutePath().normalize();
+            Path resolved = Paths.get(expandHome(path)).toAbsolutePath().normalize();
             Path root = Paths.get(SANDBOX_ROOT).toAbsolutePath().normalize();
             return resolved.startsWith(root);
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * 展开 `~` 为 user.home（Java 的 Path/File 不识别 `~`，不展开会导致
+     * `~/.xxx` 被当作 user.dir 下的普通目录而绕过沙盒校验）。
+     * 仅处理 `~` 与 `~/`、`~\` 前缀形式。
+     */
+    private String expandHome(String path) {
+        if (path == null) {
+            return null;
+        }
+        if ("~".equals(path)) {
+            return System.getProperty("user.home");
+        }
+        if (path.startsWith("~/") || path.startsWith("~\\")) {
+            return System.getProperty("user.home") + path.substring(1);
+        }
+        return path;
     }
 
     @Tool(description = "Read the text content of a file.")

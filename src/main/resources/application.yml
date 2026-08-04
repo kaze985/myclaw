@@ -6,7 +6,7 @@ spring:
       api-key: ${AI_DASHSCOPE_API_KEY}
 #      chat:
 #        options:
-#          model: qwen3.6-plus
+#          model: qwen3.8-max
 #          multi-model: true
 # springdoc-openapi项目配置
 springdoc:
@@ -40,4 +40,4 @@ tools:
   file:
     download-dir: ${user.dir}/tmp/file
   terminal:
-    allowed-commands: echo,ls,dir,pwd,cat,grep,curl,java,mvn
+    allowed-commands: echo,ls,dir,pwd,cat,grep,curl,java,mvn,npx,git

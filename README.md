@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk" alt="Java 21"/>
   <img src="https://img.shields.io/badge/Spring%20Boot-3.5.11-brightgreen?style=flat-square&logo=springboot" alt="Spring Boot"/>
   <img src="https://img.shields.io/badge/Spring%20AI%20Alibaba-1.1.2.2-blue?style=flat-square" alt="Spring AI Alibaba"/>
-  <img src="https://img.shields.io/badge/Model-qwen3.6--plus-purple?style=flat-square" alt="Qwen Model"/>
+  <img src="https://img.shields.io/badge/Model-qwen3.8--max-purple?style=flat-square" alt="Qwen Model"/>
   <img src="https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square" alt="License"/>
 </p>
 
@@ -45,7 +45,7 @@ flowchart LR
     User([👤 用户]) -->|发送消息| Feishu[飞书 Channel]
     Feishu -->|GatewayMessage| Router[AgentMessageRouter]
     Router -->|prompt| Agent[MyClaw Agent]
-    Agent <-->|推理| LLM[(qwen3.6-plus)]
+    Agent <-->|推理| LLM[(qwen3.8-max)]
     Agent <-->|Tool Call| Tools[工具集]
     Agent -->|onThought 实时推送| Feishu
     Router -->|最终回复| Feishu
@@ -308,7 +308,7 @@ flowchart TB
 | 类别 | 技术 |
 |------|------|
 | 框架 | Spring Boot 3.5、Spring AI Alibaba Agent Framework |
-| 大模型 | 阿里云 DashScope（qwen3.6-plus） |
+| 大模型 | 阿里云 DashScope（qwen3.8-max） |
 | IM 接入 | 飞书 oapi-sdk 2.5.3（WebSocket 长连接） |
 | 搜索 | Tavily Search API |
 | 网页抓取 | Microsoft Playwright |
