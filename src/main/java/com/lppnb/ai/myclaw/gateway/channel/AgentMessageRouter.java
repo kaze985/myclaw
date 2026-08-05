@@ -27,7 +27,7 @@ public class AgentMessageRouter implements MessageRouter {
             return handleNewCommand();
         }
         try {
-            prepareAgent(message.getOnThought());
+            prepareAgent(message.getOnThought(), message.getOnToken());
             String runningResult = agent.run(content);
             log.info("Agent replied successfully for sender={}", message.getSenderId());
             return runningResult;
@@ -36,6 +36,7 @@ public class AgentMessageRouter implements MessageRouter {
             return "抱歉，处理您的消息时发生错误：" + e.getMessage();
         } finally {
             agent.setOnThought(null);
+            agent.setOnToken(null);
         }
     }
 
@@ -52,9 +53,10 @@ public class AgentMessageRouter implements MessageRouter {
     /**
      * 准备 Agent 执行下一轮对话：重置运行状态与步数计数器，但保留上下文消息以支持连续多轮对话。
      */
-    private synchronized void prepareAgent(Consumer<String> onThought) {
+    private synchronized void prepareAgent(Consumer<String> onThought, Consumer<String> onToken) {
         agent.setState(AgentState.IDLE);
         agent.setCurrentStep(0);
         agent.setOnThought(onThought);
+        agent.setOnToken(onToken);
     }
 }

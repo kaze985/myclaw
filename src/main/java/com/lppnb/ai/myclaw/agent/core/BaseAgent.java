@@ -64,6 +64,12 @@ public abstract class BaseAgent {
      */
     private Consumer<String> onThought;
 
+    /**
+     * 模型回复增量文本回调（流式）：think 阶段流式输出时逐段触发，
+     * 用于 Web 端实现真·流式打字效果。为 null 时不触发。
+     */
+    private Consumer<String> onToken;
+
 
 
 

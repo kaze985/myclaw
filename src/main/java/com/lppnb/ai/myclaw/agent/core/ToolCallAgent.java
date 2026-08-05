@@ -1,5 +1,9 @@
 package com.lppnb.ai.myclaw.agent.core;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -8,6 +12,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingManager;
@@ -70,21 +75,59 @@ public class ToolCallAgent extends ReActAgent {
         
         log.debug("Agent [{}] invoking chat model with {} messages.", getName(), getContextMessages().size());
         Prompt prompt = new Prompt(getContextMessages(), chatOptions);
-        ChatResponse chatResponse = getChatClient().prompt(prompt)
-                .system(getSystemPrompt())
-                .toolCallbacks(availableTools)
-                .call()
-                .chatResponse();
-        this.toolCallChatResponse = chatResponse;
-        
-        if (chatResponse == null || chatResponse.getResult() == null) {
-            log.warn("Agent [{}] chat response is null.", getName());
+
+        // 流式调用：逐段推送增量文本（onToken，Web 端真·流式打字），同时阻塞收集完整响应
+        List<ChatResponse> responses;
+        try {
+            responses = getChatClient().prompt(prompt)
+                    .system(getSystemPrompt())
+                    .toolCallbacks(availableTools)
+                    .stream()
+                    .chatResponse()
+                    .doOnNext(response -> {
+                        if (getOnToken() != null && response.getResult() != null && response.getResult().getOutput() != null) {
+                            String delta = response.getResult().getOutput().getText();
+                            if (StringUtils.isNotBlank(delta)) {
+                                getOnToken().accept(delta);
+                            }
+                        }
+                    })
+                    .collectList()
+                    .block(Duration.ofMinutes(5));
+        } catch (Exception e) {
+            log.error("Agent [{}] chat stream failed: {}", getName(), e.getMessage(), e);
             setState(AgentState.FINISHED);
             return false;
         }
-        
-        AssistantMessage assistantMessage = chatResponse.getResult().getOutput();
-        
+
+        if (responses == null || responses.isEmpty()) {
+            log.warn("Agent [{}] chat response is empty (timeout or no output).", getName());
+            setState(AgentState.FINISHED);
+            return false;
+        }
+
+        // 合并流式分片：完整文本 + 全部工具调用，重建标准响应结构
+        StringBuilder fullText = new StringBuilder();
+        List<AssistantMessage.ToolCall> toolCalls = new ArrayList<>();
+        for (ChatResponse response : responses) {
+            if (response.getResult() == null || response.getResult().getOutput() == null) {
+                continue;
+            }
+            AssistantMessage partial = response.getResult().getOutput();
+            if (StringUtils.isNotBlank(partial.getText())) {
+                fullText.append(partial.getText());
+            }
+            if (partial.getToolCalls() != null && !partial.getToolCalls().isEmpty()) {
+                toolCalls.addAll(partial.getToolCalls());
+            }
+        }
+
+        AssistantMessage assistantMessage = AssistantMessage.builder()
+                .content(fullText.toString())
+                .toolCalls(toolCalls)
+                .build();
+        this.toolCallChatResponse = new ChatResponse(List.of(new Generation(assistantMessage)));
+
         String thought = assistantMessage.getText();
         if (StringUtils.isNotBlank(thought)) {
             log.info("Agent [{}] model thought:\n{}", getName(), thought);

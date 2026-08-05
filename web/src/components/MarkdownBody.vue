@@ -42,9 +42,14 @@ function linkArtifacts(content: string): string {
   )
 }
 
-// marked 渲染（异步关闭，取同步字符串结果），DOMPurify 消毒防 XSS
+// marked 渲染（breaks: true 保留 Agent 回复中的单个换行，gfm 开启表格/删除线等扩展），
+// DOMPurify 消毒防 XSS
 const html = computed(() => {
-  const raw = marked.parse(linkArtifacts(props.content ?? ''), { async: false }) as string
+  const raw = marked.parse(linkArtifacts(props.content ?? ''), {
+    async: false,
+    breaks: true,
+    gfm: true,
+  }) as string
   return DOMPurify.sanitize(raw)
 })
 

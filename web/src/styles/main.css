@@ -288,6 +288,44 @@ button {
   flex-direction: column;
 }
 
+/* 打字机光标：内容末尾的闪烁指示（打字效果唯一动效点） */
+.msg-typing {
+  cursor: pointer;
+}
+
+.type-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 3px;
+  background: var(--primary);
+  animation: caret-blink 1s steps(2, start) infinite;
+}
+
+/* 等待态光标：done 前的「正在生成」占位 */
+.type-caret-waiting {
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* 屏幕阅读器专用文本（视觉隐藏） */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .msg-error {
   margin: 0;
   padding: 10px 14px;
@@ -296,26 +334,6 @@ button {
   background: rgba(220, 38, 38, 0.06);
   color: var(--danger);
   font-size: 13.5px;
-}
-
-.msg-thinking {
-  margin: 2px 0 0;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 13px;
-}
-
-.dots::after {
-  content: '';
-  animation: thinking-dots 1.4s steps(4, end) infinite;
-}
-
-@keyframes thinking-dots {
-  0% { content: ''; }
-  25% { content: ' .'; }
-  50% { content: ' ..'; }
-  75% { content: ' ...'; }
-  100% { content: ''; }
 }
 
 /* ---------- ReAct 管线（签名元素） ---------- */
@@ -372,6 +390,11 @@ button {
   font-size: 12.5px;
   line-height: 1.6;
   color: var(--muted);
+}
+
+.step-text {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .tool-badge {

@@ -74,6 +74,9 @@ export function useChat(
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
+      // pendingReset：收到 thought 后，下一批 token 是新一轮 think 的增量，
+      // 需要清空之前累计的预览文本（中间的思考/工具调用说明不是最终回复）
+      const streamState = { pendingReset: false }
       for (;;) {
         const { done, value } = await reader.read()
         if (done) break
@@ -81,17 +84,17 @@ export function useChat(
         const { frames, rest } = extractFrames(buffer)
         buffer = rest
         for (const frame of frames) {
-          handleFrame(frame, assistant)
+          handleFrame(frame, assistant, streamState)
         }
       }
       // 流结束：flush 解码器残留，并处理尾部未以空行结尾的帧
       buffer += decoder.decode()
       const { frames, rest } = extractFrames(buffer)
       for (const frame of frames) {
-        handleFrame(frame, assistant)
+        handleFrame(frame, assistant, streamState)
       }
       if (rest.trim()) {
-        handleFrame(rest, assistant)
+        handleFrame(rest, assistant, streamState)
       }
       if (assistant.status === 'streaming') {
         assistant.status = 'done'
@@ -137,7 +140,7 @@ export function useChat(
   }
 
   /** 解析单个 SSE 帧（event:/data: 行）并更新消息状态 */
-  function handleFrame(frame: string, msg: ChatMessage): void {
+  function handleFrame(frame: string, msg: ChatMessage, streamState: { pendingReset: boolean }): void {
     let event = 'message'
     let data = ''
     for (const line of frame.split('\n')) {
@@ -160,8 +163,23 @@ export function useChat(
       const text = payload.text ?? ''
       const thought: Thought = { id: uid(), text, tool: detectTool(text) }
       msg.thoughts.push(thought)
+      // 新一轮 think 已结束：后续 token 若出现，属于新的 think（需要清空预览）
+      streamState.pendingReset = true
+    } else if (event === 'token') {
+      // 新一轮 think 的增量：清掉上一轮（中间思考）的预览文本
+      if (streamState.pendingReset) {
+        msg.content = ''
+        streamState.pendingReset = false
+      }
+      msg.content += payload.text ?? ''
     } else if (event === 'done') {
       msg.content = payload.content ?? ''
+      // Agent 最终回复经 onThought 推送过（后端 done 的 content 回退到最后一个 think 文本），
+      // 若最后一个思考节点与最终回复一致，从管线移除避免重复展示
+      const last = msg.thoughts[msg.thoughts.length - 1]
+      if (last && last.text.trim() === msg.content.trim()) {
+        msg.thoughts.pop()
+      }
       msg.status = 'done'
     } else if (event === 'error') {
       msg.status = 'error'

@@ -32,4 +32,10 @@ public class GatewayMessage {
      * 用于将中间思考内容实时推送至客户端（如飞书）。
      */
     private Consumer<String> onThought;
+
+    /**
+     * 模型回复增量文本回调（流式输出），可为 null。
+     * 用于 Web 端真·流式打字：每次 think 流式输出时逐段推送。
+     */
+    private Consumer<String> onToken;
 }

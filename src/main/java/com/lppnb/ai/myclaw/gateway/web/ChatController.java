@@ -3,6 +3,7 @@ package com.lppnb.ai.myclaw.gateway.web;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,18 +52,28 @@ public class ChatController {
         String sessionId = WebAuthInterceptor.extractSessionId(httpRequest);
         String content = request == null ? null : request.message();
 
+        // 记录最后一次 think 文本：Agent 的最终回复在最后一次 think 产生（route 返回空字符串），
+        // done 事件用它作为 content 回退
+        StringBuilder lastThought = new StringBuilder();
+
         GatewayMessage gatewayMessage = GatewayMessage.builder()
                 .platform("web")
                 .sessionId(sessionId)
                 .senderId(sessionId)
                 .content(content)
-                .onThought(text -> sendEvent(emitter, "thought", Map.of("text", text)))
+                .onThought(text -> {
+                    lastThought.setLength(0);
+                    lastThought.append(text);
+                    sendEvent(emitter, "thought", Map.of("text", text));
+                })
+                .onToken(text -> sendEvent(emitter, "token", Map.of("text", text)))
                 .build();
 
         CompletableFuture.runAsync(() -> {
             try {
                 String result = messageRouter.route(gatewayMessage);
-                sendEvent(emitter, "done", Map.of("content", result));
+                String reply = StringUtils.isNotBlank(result) ? result : lastThought.toString();
+                sendEvent(emitter, "done", Map.of("content", reply));
             } catch (Exception e) {
                 log.error("Web chat failed for session={}: {}", sessionId, e.getMessage(), e);
                 sendEvent(emitter, "error", Map.of("message", "处理消息时发生错误：" + e.getMessage()));

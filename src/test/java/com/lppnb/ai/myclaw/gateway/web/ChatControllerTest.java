@@ -12,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.nio.charset.StandardCharsets;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -70,7 +72,7 @@ class ChatControllerTest {
                 .andReturn();
         String body = mockMvc.perform(asyncDispatch(mvcResult))
                 .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertTrue(body.contains("event:thought"), "应推送 thought 事件: " + body);
         assertTrue(body.contains("正在调用 webSearch"), "thought 事件应包含思考文本: " + body);
     }
