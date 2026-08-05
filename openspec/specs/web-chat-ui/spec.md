@@ -1,8 +1,10 @@
+# web-chat-ui Specification
+
 ## Purpose
 
-提供 Vue 3 单页聊天界面：以亮色极简的视觉呈现 Agent 对话，实时展示思考与工具调用过程，支持 Markdown 渲染、代码高亮、本地历史持久化与产物下载，并通过登录门接入后端认证。
+提供 Vue 3 单页聊天界面：以亮色极简的视觉呈现 Agent 对话，实时展示思考与工具调用过程，支持 Markdown 渲染、代码高亮、流式打字、本地历史持久化与产物下载，并通过登录门接入后端认证。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: 登录门
 
@@ -68,6 +70,30 @@ Agent 的最终回复 SHALL 按 Markdown 渲染（标题、列表、表格、链
 
 - **WHEN** 用户点击「新建会话」
 - **THEN** 界面 SHALL 清空本地历史、调用后端清空上下文，并展示空会话欢迎态
+
+### Requirement: 回复打字机效果
+
+界面 SHALL 在收到 Agent 最终回复时以打字机方式逐字展示：流式 `token` 事件驱动回复内容实时增长并逐字打出；等待回复期间 SHALL 显示闪烁光标；用户点击消息 SHALL 立即跳过打字显示全文；系统开启减弱动效（`prefers-reduced-motion`）时 SHALL 直接显示全文；从本地历史恢复的已完成消息 SHALL 不触发打字。
+
+#### Scenario: 流式打字
+
+- **WHEN** 前端持续收到 `token` 事件时
+- **THEN** 回复内容 SHALL 随增量实时增长并逐字打字展示
+
+#### Scenario: 跳过打字
+
+- **WHEN** 打字进行中用户点击消息
+- **THEN** 界面 SHALL 立即显示完整回复
+
+#### Scenario: 减弱动效
+
+- **WHEN** 系统开启 `prefers-reduced-motion`
+- **THEN** 界面 SHALL 直接显示全文，不进行打字动画
+
+#### Scenario: 历史消息不打字
+
+- **WHEN** 页面刷新后从本地历史恢复已完成的回复
+- **THEN** 界面 SHALL 直接显示全文，不触发打字动画
 
 ### Requirement: 可用性与可访问性
 

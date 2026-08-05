@@ -8,14 +8,16 @@
 
 - 新增独立前端工程 `web/`（Vue 3 + Vite + TypeScript），构建产物由 Maven 集成复制进 Spring Boot 静态目录，保持单进程启动体验
 - 新增 **Web Channel**（`gateway.web` 包），复用现有 `GatewayMessage` / `AgentMessageRouter` 抽象：
-  - `POST /api/chat`：SSE 流式聊天端点（`SseEmitter`），Agent 每次思考产生的文本通过 `onThought` 回调实时推送，最终回复后关闭流
+  - `POST /api/chat`：SSE 流式聊天端点（`SseEmitter`），Agent 每次思考产生的文本通过 `onThought` 回调实时推送；模型流式输出逐段推送 `token` 事件（`onToken`，真·流式打字）；最终回复后推送 `done` 并关闭流
   - `POST /api/chat/new`：清空 Agent 上下文（等价于飞书 `/new` 命令）
   - 与飞书共用同一 Agent 实例与全局上下文（MVP 决策）；`AgentMessageRouter` 增加同步锁，web 与飞书消息串行处理
-- 新增 **访问认证**（`web-auth`）：环境变量配置访问密码，登录成功后签发 HttpOnly cookie 会话；所有 web 端点经拦截器校验（EventSource 无法自定义 header，故不用 Bearer token）
+  - Agent 同步调用改为流式调用（`ChatClient.stream()`），`BaseAgent`/`GatewayMessage` 新增 `onToken` 回调（null 时不触发，飞书行为不变）
+- 新增 **访问认证**（`web-auth`）：环境变量配置访问密码，登录成功后签发 HttpOnly cookie 会话；所有 web 端点经拦截器校验（EventSource 无法自定义 header，故不用 Bearer token）；`GET /api/auth/me` 供前端探测登录状态
 - 新增 **产物下载端点**：`GET /api/files/**` 只读暴露 `${user.dir}/tmp/file` 下工具生成的文档（PDF/Word/PPT/Excel），供聊天界面渲染可下载链接；沿用沙盒路径校验
 - 前端聊天界面（单页）：
   - 消息流 + 输入框 + 会话控制（新建会话 = 清空本地历史并调用 `/api/chat/new`）
-  - Agent 回复按 Markdown 渲染、代码块高亮；思考/工具调用过程流式呈现
+  - Agent 回复按 Markdown 渲染、代码块高亮；思考/工具调用过程流式呈现（ReAct 管线）
+  - **打字机效果**：最终回复随 `token` 事件逐字打出，等待期闪烁光标，点击消息跳过，尊重 `prefers-reduced-motion`，历史消息不打字
   - 聊天历史存 `localStorage`，刷新不丢
   - 亮色极简专业视觉，设计遵循 `frontend-design` / `ui-ux-pro-max` 生成的 design system
 - 新增配置项：`web.enabled`、`web.access-password`（环境变量 `WEB_ACCESS_PASSWORD` 注入）

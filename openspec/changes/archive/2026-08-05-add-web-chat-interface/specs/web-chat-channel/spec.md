@@ -46,6 +46,20 @@
 - **WHEN** 已认证用户调用 `POST /api/chat/new`
 - **THEN** 系统 SHALL 清空 Agent 上下文、重置步数计数与运行状态，返回成功提示文本
 
+### Requirement: 流式增量文本事件（token）
+
+系统 SHALL 在模型流式输出时通过 SSE 推送 `token` 事件（携带增量文本），供前端实现真·流式打字效果；`done` 事件 SHALL 携带最终回复完整文本，Agent 执行无显式返回时 SHALL 回退为最后一次思考（think）文本。
+
+#### Scenario: 模型流式输出增量文本
+
+- **WHEN** Agent 思考阶段模型流式生成文本时
+- **THEN** 系统 SHALL 逐段推送 `token` 事件，前端可实时追加显示
+
+#### Scenario: 最终回复内容回退
+
+- **WHEN** `done` 事件发送且 Agent 执行无显式返回文本时
+- **THEN** 系统 SHALL 以最后一次 think 文本作为最终回复内容推送
+
 ### Requirement: 共享上下文与串行执行
 
 Web 通道 SHALL 与飞书通道共用同一 Agent 实例与全局上下文。Agent 执行 SHALL 串行化：同一时刻仅处理一条消息，Web 与飞书消息并发到达时 SHALL 排队等待，避免共享状态被并发破坏。

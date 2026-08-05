@@ -114,6 +114,13 @@ App.vue
 - 后端 `pom.xml`：`maven-resources-plugin` 在 `process-resources` 阶段将 `web/dist` 复制进 `target/classes/static/`；`npm ci && npm run build` 由 `frontend-maven-plugin`（或预构建约定）执行——**设计倾向：前端构建由本机 node 完成，Maven 仅复制 dist**，避免 Maven 内嵌 node 下载（网络依赖），README 补充构建说明
 - 访问入口：`http://localhost:8080/api/`（静态首页与 API 同源，无 CORS）
 
+### D9. 真·流式打字（token 事件）
+
+- 后端：`ToolCallAgent.think()` 由同步 `call()` 改为 `ChatClient.stream()`——`Flux<ChatResponse>` 逐段触发 `onToken`（`BaseAgent`/`GatewayMessage` 新增字段，null 时不触发、飞书行为不变），同时合并全部分片重建标准响应结构（`AssistantMessage.builder().content(...).toolCalls(...)` + `ChatResponse(Generation)`）喂给 `ToolCallingManager`，ReAct 循环与上下文管理逻辑不变
+- SSE 新增 `token` 事件（增量文本）；`done` 的 content 在 `route()` 返回空时回退为最后一次 think 文本（Agent 的最终回复本就在最后一次 think 产生）
+- 前端：`token` 事件追加到消息 `content`；`pendingReset` 机制——收到 `thought` 后下一批 `token` 先清空预览（中间思考/工具调用说明不混入最终回复）；打字机 interval 从 `content` 头部逐字追赶（content 驱动），`done` 后打完全文即停；等待期闪烁光标 + 点击跳过 + `prefers-reduced-motion` 直显
+- 备选：EventSource/轮询（弃，EventSource 仅 GET）；仅最终 think 流式（无法预知「最后」，故每次 think 都推 token + 前端清理）
+
 ## Risks / Trade-offs
 
 - **[共享上下文] web 与飞书对话互相可见、互相可清空** → MVP 接受（spec 已定），界面与 README 明示；后续迭代做按 channel 隔离上下文

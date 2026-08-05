@@ -1,8 +1,10 @@
+# web-auth Specification
+
 ## Purpose
 
 为 Web 通道提供轻量访问认证：基于单一访问密码登录并签发 HttpOnly cookie 会话，所有 Web 端点经拦截器校验，防止未授权用户驱动 Agent 的终端与文件工具能力。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: 密码登录
 
@@ -31,6 +33,20 @@
 
 - **WHEN** 请求未携带 cookie，或 cookie 对应会话已失效/不存在
 - **THEN** 系统 SHALL 返回 401，不 SHALL 执行任何 Agent 或文件操作
+
+### Requirement: 认证态探测
+
+系统 SHALL 提供 `GET /api/auth/me` 端点，返回当前请求的会话是否有效（有效返回 200 与认证状态，无效返回 401），供前端页面加载时判断登录状态。
+
+#### Scenario: 已登录探测
+
+- **WHEN** 请求携带有效会话 cookie 访问 `GET /api/auth/me`
+- **THEN** 系统 SHALL 返回 200 并携带认证状态
+
+#### Scenario: 未登录探测
+
+- **WHEN** 请求未携带或携带失效会话 cookie 访问 `GET /api/auth/me`
+- **THEN** 系统 SHALL 返回 401
 
 ### Requirement: 登出
 
