@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Component
 public class TerminalExecuteTool {
 
-    @Value("${tools.terminal.allowed-commands:echo,ls,dir,pwd,cat,grep,curl,java,mvn}")
+    @Value("${tools.terminal.allowed-commands:echo,ls,dir,pwd,cat,type,grep,findstr,curl,wget,node,npm,npx,yarn,pnpm,python,py,pip,git,java,mvn,where,which,sort,wc,date,whoami,hostname,uname,cd,mkdir,tar}")
     private String allowedCommandsConfig;
 
     @Tool(description = "Execute a shell command and return its output.")

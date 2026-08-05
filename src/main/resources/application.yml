@@ -40,4 +40,4 @@ tools:
   file:
     download-dir: ${user.dir}/tmp/file
   terminal:
-    allowed-commands: echo,ls,dir,pwd,cat,grep,curl,java,mvn,npx,git
+    allowed-commands: echo,ls,dir,pwd,cat,type,grep,findstr,curl,wget,node,npm,npx,yarn,pnpm,python,py,pip,git,java,mvn,where,which,sort,wc,date,whoami,hostname,uname,cd,mkdir,tar

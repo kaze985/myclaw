@@ -255,6 +255,38 @@ class SkillRepositoryTest {
     }
 
     @Test
+    void auxiliaryReferenceFilesAreNotTreatedAsSkills() throws IOException {
+        // 复现用户场景：技能目录内的辅助资源（references/*.md）即使带合法 frontmatter
+        // 也不应被当作独立技能收录（只认 <root>/<name>/SKILL.md 与 <root>/<name>.md）
+        writeNestedSkill(userSkillsDir, "release-openspec", """
+                ---
+                name: release-openspec
+                description: 发布工作流
+                ---
+                发布流程正文
+                """);
+        Path referencesDir = Path.of(userSkillsDir, "release-openspec", "references");
+        Files.createDirectories(referencesDir);
+        Files.writeString(referencesDir.resolve("release-notes.md"), """
+                ---
+                name: release-notes
+                description: 不应被收录的辅助文件
+                ---
+                发布说明草稿
+                """);
+
+        SkillRepository repo = newRepository();
+        repo.init();
+        List<SkillInfo> catalog = repo.listCatalog();
+
+        assertTrue(catalog.stream().anyMatch(s -> "release-openspec".equals(s.name())),
+                "技能本身的 SKILL.md 应被识别");
+        assertTrue(catalog.stream().noneMatch(s -> "release-notes".equals(s.name())),
+                "references/ 下的辅助 md 不应被当作技能");
+        assertEquals("发布流程正文", repo.load("release-openspec"));
+    }
+
+    @Test
     void ensureUserSkillsDirCreatesDirectory() {
         SkillRepository repo = new SkillRepository(userSkillsDir, globalSkillsDir);
         repo.ensureUserSkillsDir();

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,7 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class SkillRepository {
 
-    private static final String CLASS_SKILLS_PATTERN = "classpath*:skills/**/*.md";
+    private static final String[] CLASS_SKILLS_PATTERNS = {
+            "classpath*:skills/*/SKILL.md",   // 标准嵌套格式
+            "classpath*:skills/*.md"          // 兼容旧扁平格式
+    };
     private static final String CLASS_SKILLS_PREFIX = "classpath:skills/";
 
     /** 技能定义文件名（嵌套格式）。 */
@@ -182,21 +186,23 @@ public class SkillRepository {
     private List<Parsed> scanClasspathSkills() {
         List<Parsed> result = new ArrayList<>();
         try {
-            Resource[] resources = resourceResolver.getResources(CLASS_SKILLS_PATTERN);
-            for (Resource resource : resources) {
-                try {
-                    Parsed parsed = SkillFileParser.parse(resource.getContentAsString(StandardCharsets.UTF_8));
-                    if (parsed != null) {
-                        result.add(parsed);
-                    } else {
-                        log.warn("Skip invalid classpath skill file: {}", resource.getFilename());
+            for (String pattern : CLASS_SKILLS_PATTERNS) {
+                Resource[] resources = resourceResolver.getResources(pattern);
+                for (Resource resource : resources) {
+                    try {
+                        Parsed parsed = SkillFileParser.parse(resource.getContentAsString(StandardCharsets.UTF_8));
+                        if (parsed != null) {
+                            result.add(parsed);
+                        } else {
+                            log.warn("Skip invalid classpath skill file: {}", resource.getFilename());
+                        }
+                    } catch (IOException e) {
+                        log.warn("Failed to read classpath skill resource: {}", resource.getFilename(), e);
                     }
-                } catch (IOException e) {
-                    log.warn("Failed to read classpath skill resource: {}", resource.getFilename(), e);
                 }
             }
         } catch (IOException e) {
-            log.warn("Failed to scan classpath skills with pattern {}", CLASS_SKILLS_PATTERN, e);
+            log.warn("Failed to scan classpath skills with patterns {}", Arrays.toString(CLASS_SKILLS_PATTERNS), e);
         }
         return result;
     }
@@ -207,27 +213,55 @@ public class SkillRepository {
         if (!root.isDirectory()) {
             return result;
         }
-        collectMarkdownFiles(root, result);
+        collectSkillFiles(root, result);
         return result;
     }
 
-    /** 递归收集目录下所有 .md 文件并解析（嵌套格式与扁平格式均可识别）。 */
-    private void collectMarkdownFiles(File dir, List<Parsed> result) {
-        File[] files = dir.listFiles();
-        if (files == null) {
+    /**
+     * 只收集技能定义文件：嵌套标准 {@code <root>/<name>/SKILL.md}（一级子目录）
+     * 与旧扁平格式 {@code <root>/<name>.md}（根下直接文件）。
+     * 不深递归，避免把技能目录内的辅助资源（如 references/*.md）误当技能定义。
+     */
+    private void collectSkillFiles(File root, List<Parsed> result) {
+        File[] entries = root.listFiles();
+        if (entries == null) {
             return;
         }
-        for (File file : files) {
-            if (file.isDirectory()) {
-                collectMarkdownFiles(file, result);
-            } else if (file.getName().toLowerCase().endsWith(".md")) {
-                Parsed parsed = SkillFileParser.parse(FileUtil.readUtf8String(file));
-                if (parsed != null) {
-                    result.add(parsed);
-                } else {
-                    log.warn("Skip invalid skill file: {}", file.getAbsolutePath());
+        for (File entry : entries) {
+            if (entry.isFile()) {
+                // 兼容旧扁平格式：<root>/<name>.md
+                if (entry.getName().toLowerCase().endsWith(".md")) {
+                    addIfValid(entry, result);
+                }
+            } else if (entry.isDirectory()) {
+                // 标准嵌套格式：<root>/<name>/SKILL.md（一级子目录，不深递归）
+                File skillFile = findSkillDefinition(entry);
+                if (skillFile != null) {
+                    addIfValid(skillFile, result);
                 }
             }
+        }
+    }
+
+    /** 在技能目录内查找定义文件 SKILL.md（大小写不敏感兜底，兼容 Linux 上小写命名）。 */
+    private File findSkillDefinition(File dir) {
+        File exact = new File(dir, SKILL_FILE_NAME);
+        if (exact.isFile()) {
+            return exact;
+        }
+        File[] candidates = dir.listFiles((d, n) -> n.equalsIgnoreCase(SKILL_FILE_NAME));
+        if (candidates != null && candidates.length > 0) {
+            return candidates[0];
+        }
+        return null;
+    }
+
+    private void addIfValid(File file, List<Parsed> result) {
+        Parsed parsed = SkillFileParser.parse(FileUtil.readUtf8String(file));
+        if (parsed != null) {
+            result.add(parsed);
+        } else {
+            log.warn("Skip invalid skill file: {}", file.getAbsolutePath());
         }
     }
 }
