@@ -15,6 +15,7 @@ import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallback;
 
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
+import com.lppnb.ai.myclaw.agent.context.AgentContextManager;
 import com.lppnb.ai.myclaw.agent.model.AgentState;
 
 import lombok.Data;
@@ -37,6 +38,11 @@ public class ToolCallAgent extends ReActAgent {
 
     private final ChatOptions chatOptions;
 
+    /**
+     * 上下文管理器（可为 null）：在每次 think 组装 prompt 前检查并压缩超窗上下文。
+     */
+    private AgentContextManager contextManager;
+
     public ToolCallAgent(ToolCallback[] availableTools) {
         super();
         this.availableTools = availableTools;
@@ -50,6 +56,10 @@ public class ToolCallAgent extends ReActAgent {
 
     @Override
     protected boolean think() {
+        // 推理前检查上下文：超窗时压缩最老的对话段，防止上下文无限累积
+        if (contextManager != null) {
+            contextManager.prepare(getContextMessages());
+        }
         if (StringUtils.isNotBlank(getNextStepPrompt())) {
             Message lastMessage = getContextMessages().isEmpty() ? null : getContextMessages().getLast();
             if (!(lastMessage instanceof UserMessage) || !getNextStepPrompt().equals(((UserMessage) lastMessage).getText())) {

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.lppnb.ai.myclaw.agent.context.AgentContextProperties;
 import com.lppnb.ai.myclaw.tool.skill.SkillFileParser.Parsed;
 import com.lppnb.ai.myclaw.tool.skill.SkillRepository.SkillInfo;
 
@@ -299,7 +300,7 @@ class SkillRepositoryTest {
     void loadSkillToolReturnsBodyForExistingSkill() {
         SkillRepository repo = newRepository();
         repo.init();
-        LoadSkillTool tool = new LoadSkillTool(repo);
+        LoadSkillTool tool = new LoadSkillTool(repo, new AgentContextProperties());
         String result = tool.loadSkill("skill-creator");
         assertNotNull(result);
         assertTrue(result.contains("技能创建助手"), "应返回内置 skill-creator 正文");
@@ -309,8 +310,27 @@ class SkillRepositoryTest {
     void loadSkillToolReturnsErrorForUnknownSkill() {
         SkillRepository repo = newRepository();
         repo.init();
-        LoadSkillTool tool = new LoadSkillTool(repo);
+        LoadSkillTool tool = new LoadSkillTool(repo, new AgentContextProperties());
         String result = tool.loadSkill("no-such-skill");
         assertEquals("技能不存在：no-such-skill", result);
+    }
+
+    @Test
+    void loadSkillToolTruncatesOversizedBody() throws IOException {
+        // 构造超长技能正文（> 默认 8000 字符上限）
+        writeNestedSkill(userSkillsDir, "huge-skill", """
+                ---
+                name: huge-skill
+                description: 超长技能
+                ---
+                """ + "内容".repeat(5000));
+        SkillRepository repo = newRepository();
+        repo.init();
+        AgentContextProperties properties = new AgentContextProperties();
+        LoadSkillTool tool = new LoadSkillTool(repo, properties);
+        String result = tool.loadSkill("huge-skill");
+        assertTrue(result.contains("内容过长已截断"), "超长技能正文应被截断并注明");
+        assertTrue(result.length() <= properties.getMaxSkillBodyChars() + 100,
+                "截断后长度应接近上限，实际 " + result.length());
     }
 }

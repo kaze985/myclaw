@@ -6,6 +6,8 @@ import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.lppnb.ai.myclaw.tool.ToolResultTruncator;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Arrays;
@@ -22,6 +24,9 @@ public class TerminalExecuteTool {
 
     @Value("${tools.terminal.allowed-commands:echo,ls,dir,pwd,cat,type,grep,findstr,curl,wget,node,npm,npx,yarn,pnpm,python,py,pip,git,java,mvn,where,which,sort,wc,date,whoami,hostname,uname,cd,mkdir,tar}")
     private String allowedCommandsConfig;
+
+    @Value("${agent.context.max-tool-result-chars:20000}")
+    private int maxToolResultChars;
 
     @Tool(description = "Execute a shell command and return its output.")
     public String executeCommand(
@@ -71,7 +76,8 @@ public class TerminalExecuteTool {
 
             int exitCode = process.exitValue();
             log.debug("命令执行完毕：exitCode={}, command={}", exitCode, command);
-            return "[exitCode=" + exitCode + "]\n" + output;
+            String result = "[exitCode=" + exitCode + "]\n" + output;
+            return ToolResultTruncator.truncate(result, maxToolResultChars);
 
         } catch (Exception e) {
             log.error("命令执行异常：{}", command, e);

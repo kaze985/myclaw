@@ -10,8 +10,11 @@ import com.microsoft.playwright.options.LoadState;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+
+import com.lppnb.ai.myclaw.tool.ToolResultTruncator;
 
 /**
  * 动态网页抓取工具：优先使用 Hutool 静态抓取，JS 渲染页面自动回退到 Playwright Chromium。
@@ -23,6 +26,9 @@ public class WebScrapeTool {
     private static final int TIMEOUT_MS = 30_000;
     private static final int MIN_CONTENT_LENGTH = 100;
 
+    @Value("${agent.context.max-tool-result-chars:20000}")
+    private int maxToolResultChars;
+
     @Tool(description = "Extract plain text content from a web page.")
     public String webScrape(
             @ToolParam(description = "The URL of the web page to scrape") String url) {
@@ -31,7 +37,7 @@ public class WebScrapeTool {
             String html = HttpUtil.get(url, TIMEOUT_MS);
             String text = extractText(html);
             if (isValidContent(text)) {
-                return text;
+                return ToolResultTruncator.truncate(text, maxToolResultChars);
             }
             log.debug("静态内容不足（{}字符），回退到 Playwright：{}", text.length(), url);
         } catch (Exception e) {
@@ -73,7 +79,7 @@ public class WebScrapeTool {
                         page.navigate(url);
                         page.waitForLoadState(LoadState.NETWORKIDLE);
                         String content = page.innerText("body");
-                        return content.replaceAll("\\s+", " ").trim();
+                        return ToolResultTruncator.truncate(content.replaceAll("\\s+", " ").trim(), maxToolResultChars);
                     }
                 }
             }

@@ -1,11 +1,13 @@
 package com.lppnb.ai.myclaw.agent.app;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Component;
 
 import com.lppnb.ai.myclaw.agent.core.ToolCallAgent;
+import com.lppnb.ai.myclaw.agent.context.AgentContextManager;
 import com.lppnb.ai.myclaw.tool.skill.SkillCatalogGenerator;
 
 /**
@@ -16,13 +18,21 @@ import com.lppnb.ai.myclaw.tool.skill.SkillCatalogGenerator;
 public class MyClaw extends ToolCallAgent {
     private final String baseSystemPrompt;
 
+    /**
+     * 下一步指引文本：随 system prompt 每轮注入（见 {@link #getSystemPrompt()}），
+     * 不写入上下文消息列表，避免长任务中重复累积（对比 ToolCallAgent 的 nextStepPrompt 机制）。
+     */
+    private final String nextStepText;
+
     private final SkillCatalogGenerator skillCatalogGenerator;
 
     public MyClaw(ToolCallback[] allTools,
                   ChatModel dashScopeChatModel,
-                  SkillCatalogGenerator skillCatalogGenerator) {
+                  SkillCatalogGenerator skillCatalogGenerator,
+                  AgentContextManager agentContextManager) {
         super(allTools);
         this.skillCatalogGenerator = skillCatalogGenerator;
+        this.setContextManager(agentContextManager);
         this.setName("myclaw");
         String SYSTEM_PROMPT = """
                 You are myclaw, an all-capable AI assistant, aimed at solving any task presented by the user.
@@ -31,13 +41,13 @@ public class MyClaw extends ToolCallAgent {
                 """;
         this.baseSystemPrompt = SYSTEM_PROMPT;
         this.setSystemPrompt(SYSTEM_PROMPT);
-        String NEXT_STEP_PROMPT = """
-                Based on user needs, proactively select the most appropriate tool or combination of tools.
-                For complex tasks, you can break down the problem and use different tools step by step to solve it.
-                After using each tool, clearly explain the execution results and suggest the next steps.
-                If you want to stop the interaction at any point, use the `terminate` tool/function call.
-                """;
-        this.setNextStepPrompt(NEXT_STEP_PROMPT);
+        this.nextStepText = """
+                Proactively select and combine the appropriate tools to complete the task, and clearly explain
+                the execution results after each tool use. Use the `terminate` tool to end the interaction
+                when the task is done.
+                """.trim();
+        // 注意：不再调用 setNextStepPrompt()——ToolCallAgent.think() 会把该字段作为
+        // UserMessage 重复注入上下文（每轮工具循环一份），改为随 system prompt 注入后零累积。
         this.setMaxSteps(20);
 
         ChatClient chatClient = ChatClient.builder(dashScopeChatModel)
@@ -46,15 +56,20 @@ public class MyClaw extends ToolCallAgent {
     }
 
     /**
-     * 动态系统提示词：基础提示词 + 最新技能目录。
-     * think() 每次推理都会调用本方法，因此用户运行时新建的技能在下一轮推理立即生效。
+     * 动态系统提示词：基础提示词 + 下一步指引 + 最新技能目录。
+     * think() 每次推理都会调用本方法（system prompt 每轮重新传入），
+     * 因此用户运行时新建的技能在下一轮推理立即生效，且 nextStep 指引零上下文累积。
      */
     @Override
     public String getSystemPrompt() {
-        String catalog = skillCatalogGenerator.generateCatalog();
-        if (catalog.isEmpty()) {
-            return baseSystemPrompt;
+        StringBuilder sb = new StringBuilder(baseSystemPrompt);
+        if (StringUtils.isNotBlank(nextStepText)) {
+            sb.append("\n\n").append(nextStepText);
         }
-        return baseSystemPrompt + "\n\n" + catalog;
+        String catalog = skillCatalogGenerator.generateCatalog();
+        if (StringUtils.isNotBlank(catalog)) {
+            sb.append("\n\n").append(catalog);
+        }
+        return sb.toString();
     }
 }

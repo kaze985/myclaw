@@ -4,11 +4,16 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
+import com.lppnb.ai.myclaw.agent.context.AgentContextProperties;
+import com.lppnb.ai.myclaw.tool.ToolResultTruncator;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * 按需加载技能工具：根据技能 name 返回技能正文（不含 frontmatter），
  * 正文作为工具结果进入对话上下文（渐进式暴露，不常驻系统提示词）。
+ * 超长正文按 {@link AgentContextProperties#getMaxSkillBodyChars()} 截断，
+ * 避免单条技能正文占用过多上下文预算。
  */
 @Slf4j
 @Component
@@ -16,8 +21,11 @@ public class LoadSkillTool {
 
     private final SkillRepository skillRepository;
 
-    public LoadSkillTool(SkillRepository skillRepository) {
+    private final AgentContextProperties properties;
+
+    public LoadSkillTool(SkillRepository skillRepository, AgentContextProperties properties) {
         this.skillRepository = skillRepository;
+        this.properties = properties;
     }
 
     @Tool(description = """
@@ -38,6 +46,6 @@ public class LoadSkillTool {
             return "技能不存在：" + normalized;
         }
         log.info("loadSkill 加载技能成功：{}（正文 {} 字符）", normalized, body.length());
-        return body;
+        return ToolResultTruncator.truncate(body, properties.getMaxSkillBodyChars());
     }
 }

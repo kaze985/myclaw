@@ -48,10 +48,15 @@ class SkillIntegrationTest {
     }
 
     @Test
-    void myClawSystemPromptCarriesCatalog() {
+    void myClawSystemPromptCarriesCatalogAndNextStep() {
         String systemPrompt = myClaw.getSystemPrompt();
         assertTrue(systemPrompt.contains("可用技能目录"), "MyClaw 系统提示词应包含技能目录");
         assertTrue(systemPrompt.contains("skill-creator"), "系统提示词应包含 skill-creator 条目");
+        assertTrue(systemPrompt.contains("Proactively select and combine"),
+                "下一步指引应随系统提示词注入（而非 UserMessage 累积）");
+        // nextStepPrompt 字段保持为空，ToolCallAgent.think() 因此不会把它重复注入上下文消息
+        assertTrue(myClaw.getNextStepPrompt() == null || myClaw.getNextStepPrompt().isEmpty(),
+                "nextStepPrompt 字段应为空，避免 UserMessage 重复注入");
     }
 
     @Test

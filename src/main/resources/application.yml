@@ -41,3 +41,12 @@ tools:
     download-dir: ${user.dir}/tmp/file
   terminal:
     allowed-commands: echo,ls,dir,pwd,cat,type,grep,findstr,curl,wget,node,npm,npx,yarn,pnpm,python,py,pip,git,java,mvn,where,which,sort,wc,date,whoami,hostname,uname,cd,mkdir,tar
+agent:
+  context:
+    window-tokens: 1000000
+    compress-threshold: 0.8
+    compress-target: 0.4
+    token-estimate-ratio: 0.6
+    max-tool-result-chars: 20000
+    max-skill-body-chars: 10000
+    max-catalog-entries: 50

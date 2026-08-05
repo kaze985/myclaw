@@ -1,9 +1,11 @@
 package com.lppnb.ai.myclaw.tool.file;
 
 import cn.hutool.core.io.FileUtil;
+import com.lppnb.ai.myclaw.tool.ToolResultTruncator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -22,6 +24,9 @@ public class SandboxedFileOpsTool {
 
     private static final String SANDBOX_ROOT = System.getProperty("user.dir");
     private static final String REJECT_MSG = "操作被拒绝：路径越界";
+
+    @Value("${agent.context.max-tool-result-chars:20000}")
+    private int maxToolResultChars;
 
     /** 规范化路径并验证是否在沙盒范围内 */
     private boolean isPathSafe(String path) {
@@ -59,7 +64,7 @@ public class SandboxedFileOpsTool {
             return REJECT_MSG;
         }
         try {
-            return FileUtil.readString(path, StandardCharsets.UTF_8);
+            return ToolResultTruncator.truncate(FileUtil.readString(path, StandardCharsets.UTF_8), maxToolResultChars);
         } catch (Exception e) {
             return "读取文件失败：" + e.getMessage();
         }
@@ -98,10 +103,12 @@ public class SandboxedFileOpsTool {
             if (files == null || files.length == 0) {
                 return "目录为空";
             }
-            return Arrays.stream(files)
-                    .map(f -> (f.isDirectory() ? "[DIR]  " : "[FILE] ") + f.getName())
-                    .sorted()
-                    .collect(Collectors.joining("\n"));
+            return ToolResultTruncator.truncate(
+                    Arrays.stream(files)
+                            .map(f -> (f.isDirectory() ? "[DIR]  " : "[FILE] ") + f.getName())
+                            .sorted()
+                            .collect(Collectors.joining("\n")),
+                    maxToolResultChars);
         } catch (Exception e) {
             return "列出目录失败：" + e.getMessage();
         }
