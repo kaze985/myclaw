@@ -19,6 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.HandlerMapping;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
  * 严格沙盒路径校验，防止目录穿越。
  */
 @Slf4j
+@Tag(name = "Files", description = "工具产物只读下载端点（沙盒文件）")
 @RestController
 @RequestMapping("/files")
 @Conditional(WebChannelCondition.class)
@@ -36,6 +41,13 @@ public class ArtifactDownloadController {
             .toAbsolutePath().normalize();
 
     /** 下载产物文件：GET /api/files/** */
+    @Operation(summary = "下载产物文件",
+            description = "GET /api/files/{路径} 下载 ${user.dir}/tmp/file 目录内的文件（Agent 生成的 PDF/Word/PPT/Excel 等产物），"
+                    + "严格沙盒路径校验，防止目录穿越；文件名支持中文（RFC 5987 编码）")
+    @ApiResponse(responseCode = "200", description = "文件内容，Content-Disposition: attachment 下载")
+    @ApiResponse(responseCode = "400", description = "路径缺失或非法")
+    @ApiResponse(responseCode = "403", description = "越出沙盒目录，拒绝访问")
+    @ApiResponse(responseCode = "404", description = "文件不存在")
     @GetMapping("/**")
     public ResponseEntity<Resource> download(HttpServletRequest request) {
         String relative = extractRelativePath(request);

@@ -17,9 +17,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 /**
  * Web 通道认证端点：密码登录签发 HttpOnly cookie、登出、认证态探测。
  */
+@Tag(name = "Auth", description = "Web 通道认证：密码登录、登出、认证态探测")
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -29,10 +35,19 @@ public class WebAuthController {
     private final WebProperties webProperties;
     private final WebSessionRegistry sessionRegistry;
 
+    /** 登录请求体 */
+    @Schema(description = "登录请求体")
+    public record LoginRequest(
+            @Schema(description = "访问密码", example = "your-password") String password) {
+    }
+
     /** 登录：校验密码，成功签发 HttpOnly cookie */
+    @Operation(summary = "密码登录", description = "校验访问密码，成功签发 HttpOnly cookie 会话（有效期 7 天）")
+    @ApiResponse(responseCode = "200", description = "登录成功，Set-Cookie 携带会话 ID")
+    @ApiResponse(responseCode = "401", description = "密码错误")
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody Map<String, String> body, HttpServletResponse response) {
-        String password = body == null ? null : body.get("password");
+    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest body, HttpServletResponse response) {
+        String password = body == null ? null : body.password();
         if (webProperties.getAccessPassword() == null
                 || !webProperties.getAccessPassword().equals(password)) {
             return ResponseEntity.status(401).body(Map.of("message", "密码错误"));
@@ -43,6 +58,7 @@ public class WebAuthController {
     }
 
     /** 登出：注销服务端会话并清除客户端 cookie */
+    @Operation(summary = "登出", description = "注销服务端会话并清除客户端 cookie")
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout(HttpServletRequest request, HttpServletResponse response) {
         sessionRegistry.invalidate(WebAuthInterceptor.extractSessionId(request));
@@ -51,6 +67,9 @@ public class WebAuthController {
     }
 
     /** 认证态探测：有效会话返回 200，否则 401 */
+    @Operation(summary = "认证态探测", description = "探测当前请求是否已认证：有效会话返回 200，否则返回 401")
+    @ApiResponse(responseCode = "200", description = "已认证（authenticated=true）")
+    @ApiResponse(responseCode = "401", description = "未认证（authenticated=false）")
     @GetMapping("/me")
     public ResponseEntity<Map<String, Boolean>> me(HttpServletRequest request) {
         boolean authenticated = sessionRegistry.isValid(WebAuthInterceptor.extractSessionId(request));

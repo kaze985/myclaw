@@ -15,6 +15,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.lppnb.ai.myclaw.gateway.channel.GatewayMessage;
 import com.lppnb.ai.myclaw.gateway.channel.MessageRouter;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  * Agent 调用在独立线程中执行（与飞书通道一致），不阻塞 servlet 线程。</p>
  */
 @Slf4j
+@Tag(name = "Chat", description = "Web 聊天通道：SSE 流式对话与会话控制")
 @RestController
 @RequestMapping("/chat")
 @RequiredArgsConstructor
@@ -39,10 +45,16 @@ public class ChatController {
     private final MessageRouter messageRouter;
 
     /** 请求体：用户消息 */
-    public record ChatRequest(String message) {
+    @Schema(description = "聊天请求体")
+    public record ChatRequest(
+            @Schema(description = "用户消息内容", example = "帮我搜索一下 Spring AI Alibaba 的最新版本") String message) {
     }
 
     /** SSE 流式对话：返回 text/event-stream */
+    @Operation(summary = "SSE 流式对话",
+            description = "通过 text/event-stream 流式返回 Agent 的思考过程与回复："
+                    + "thought(思考) → token(增量文本) → done(完成) 或 error(异常)")
+    @ApiResponse(responseCode = "200", description = "SSE 流（text/event-stream），事件：thought / token / done / error")
     @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(@RequestBody ChatRequest request, HttpServletRequest httpRequest) {
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
@@ -85,6 +97,7 @@ public class ChatController {
     }
 
     /** 新建会话：清空 Agent 上下文（等价于飞书 /new 命令） */
+    @Operation(summary = "新建会话", description = "清空当前会话的 Agent 上下文，等价于飞书 /new 命令")
     @PostMapping("/new")
     public Map<String, String> newChat(HttpServletRequest httpRequest) {
         GatewayMessage gatewayMessage = GatewayMessage.builder()

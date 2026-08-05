@@ -24,7 +24,8 @@
 | 能力 | 说明 |
 |------|------|
 | 🧠 **ReAct 智能体** | 基于 Think → Act → Observe 循环，最多 20 步自主推理与工具调用 |
-| 🔧 **11 种内置工具** | 搜索、抓取、下载、终端、文件、Office/PDF 文档生成等 |
+| 🔧 **12 种内置工具** | 搜索、抓取、下载、终端、文件、Office/PDF 文档生成等 |
+| 🧩 **技能系统** | 技能目录随 system prompt 动态注入，`loadSkill` 按需加载指令，内置 skill-creator 可对话创建技能 |
 | 💬 **飞书 Gateway** | WebSocket 长连接接入，支持多轮对话与实时思考推送 |
 | 🌐 **Web 聊天界面** | 浏览器直连 Agent，SSE 流式展示思考过程与工具调用，支持 Markdown 与文档产物下载 |
 | 🔒 **安全沙盒** | 文件操作限制在 `user.dir` 内，终端命令白名单管控 |
@@ -39,7 +40,7 @@
   <img src="docs/images/architecture.png" alt="MyClaw 系统架构图" width="720"/>
 </p>
 
-消息从飞书（或未来扩展的其他 Channel）进入 Gateway，由 `AgentMessageRouter` 路由至 `MyClaw` Agent。Agent 在 ReAct 循环中调用 DashScope 大模型决策，按需触发工具执行，最终将结果回复给用户。
+消息从飞书（或未来扩展的其他 Channel）进入 Gateway，由 `AgentMessageRouter` 路由至 `MyClaw` Agent。Agent 在 ReAct 循环中调用 DashScope 大模型决策，按需触发工具执行，最终将结果回复给用户。系统提示词在每轮推理时动态重建，注入最新技能目录与下一步指引（零上下文累积），Agent 通过 `loadSkill` 按需加载技能正文。
 
 ```mermaid
 flowchart LR
@@ -67,7 +68,7 @@ Agent 每次收到用户消息后，进入如下循环，直到任务完成或�
 2. **Act** — 执行模型选择的 Tool Call，获取执行结果
 3. **Observe** — 将工具结果写入对话上下文，进入下一轮思考
 
-当模型不再请求工具、调用 `terminate` 工具，或步数达到 `maxSteps`（默认 20）时，循环结束。
+当模型不再请求工具、调用 `doTerminate` 工具，或步数达到 `maxSteps`（默认 20）时，循环结束。
 
 ---
 
@@ -86,6 +87,7 @@ Agent 每次收到用户消息后，进入如下循环，直到任务完成或�
 | `pptGenerate` | PPT (.pptx) 演示文稿生成 | Apache POI |
 | `excelGenerate` | Excel (.xlsx) 表格生成 | Apache POI |
 | `doTerminate` | 主动结束 Agent 交互 | — |
+| `loadSkill` | 按名称加载技能指令正文（渐进式暴露，超长按配置截断） | 本地技能仓库（用户 / 全局 / 内置） |
 
 > 所有工具通过 Spring AI `@Tool` 注解声明，在 `ToolRegistration` 中统一注册。
 
@@ -97,8 +99,9 @@ Agent 每次收到用户消息后，进入如下循环，直到任务完成或�
 myclaw/
 ├── src/main/java/com/lppnb/ai/myclaw/
 │   ├── agent/                    # Agent 核心
-│   │   ├── app/MyClaw.java       # 主 Agent 实例
+│   │   ├── app/MyClaw.java       # 主 Agent 实例（动态 system prompt + 技能目录）
 │   │   ├── core/                 # BaseAgent → ReActAgent → ToolCallAgent
+│   │   ├── context/              # 上下文管理（token 估算 / 自动压缩）
 │   │   └── model/AgentState.java
 │   ├── gateway/                  # 消息网关
 │   │   ├── channel/              # Channel 抽象 & 消息路由
@@ -111,10 +114,13 @@ myclaw/
 │   │   ├── terminal/             # 终端执行
 │   │   ├── file/                 # 沙盒文件操作
 │   │   ├── pdf|word|ppt|excel/   # 文档生成
+│   │   ├── skill/                # 技能仓库（用户 / 全局 / 内置 三来源）
 │   │   └── ToolRegistration.java # 工具注册入口
 │   └── MyclawApplication.java
 ├── src/main/resources/
-│   └── application.yml           # 应用配置
+│   ├── application.yml           # 应用配置
+│   └── skills/                   # 随应用发布的内置技能（如 skill-creator）
+├── skills/                       # 用户技能目录（运行时创建，对话中可新建）
 ├── web/                          # Web 前端工程（Vue 3 + Vite）
 ├── docs/images/                  # README 配图
 └── openspec/                     # OpenSpec 规格与变更记录
@@ -127,7 +133,7 @@ myclaw/
 ### 环境要求
 
 - **JDK 21+**
-- **Maven 3.9+**（或使用项目自带的 `mvnw`）
+- **Maven 3.9+**
 - **Node.js 20+**（构建 Web 前端页面需要）
 - 阿里云 DashScope API Key（通义千问）
 - Tavily API Key（联网搜索，可选）
@@ -180,11 +186,7 @@ npm run build
 cd ..
 
 # 2. 启动后端（Maven 会自动将 web/dist 产物复制进静态目录）
-# Windows
-.\mvnw.cmd spring-boot:run
-
-# Linux / macOS
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 启动成功后，服务运行在 `http://localhost:8080/api`。
@@ -245,7 +247,13 @@ tools:
   file:
     download-dir: ${user.dir}/tmp/file
   terminal:
-    allowed-commands: echo,ls,dir,pwd,cat,grep,curl,java,mvn
+    allowed-commands: echo,ls,dir,pwd,cat,type,grep,findstr,curl,wget,node,npm,npx,python,git,java,mvn,where,which,cd,mkdir,tar
+
+agent:
+  context:
+    window-tokens: 1000000       # 上下文窗口估算上限（token）
+    compress-threshold: 0.8      # 达到窗口 80% 时触发自动压缩
+    compress-target: 0.4         # 压缩至窗口 40% 后停止
 ```
 
 | 配置项 | 默认值 | 说明 |
@@ -253,10 +261,15 @@ tools:
 | `server.port` | `8080` | HTTP 服务端口 |
 | `server.servlet.context-path` | `/api` | 应用上下文路径 |
 | `gateway.feishu.enabled` | `true` | 是否启用飞书 Channel |
-| `web.enabled` | `false` | 是否启用 Web 聊天通道（需同时配置访问密码） |
+| `web.enabled` | `true` | 是否启用 Web 聊天通道（还需配置访问密码才实际生效） |
 | `web.access-password` | — | Web 界面访问密码（`${WEB_ACCESS_PASSWORD}`） |
 | `tools.file.download-dir` | `${user.dir}/tmp/file` | 下载文件存储目录 |
-| `tools.terminal.allowed-commands` | 见上方 | 终端命令白名单 |
+| `tools.terminal.allowed-commands` | 见 application.yml | 终端命令白名单 |
+| `agent.context.window-tokens` | `1000000` | 上下文窗口估算上限（token） |
+| `agent.context.compress-threshold` | `0.8` | 达到窗口该比例时触发上下文自动压缩 |
+| `agent.context.compress-target` | `0.4` | 压缩至窗口该比例后停止 |
+| `agent.context.max-tool-result-chars` | `20000` | 单条工具结果最大字符数（超出截断） |
+| `agent.context.max-skill-body-chars` | `10000` | 单条技能正文最大字符数（超出截断） |
 
 ---
 
@@ -286,6 +299,14 @@ MyClaw: → 调用 webScrape（Playwright 渲染）
 MyClaw: 清空上下文成功！
 ```
 
+```
+用户: 帮我创建一个叫 weekly-report 的技能，以后用于生成每周周报
+
+MyClaw: → 调用 loadSkill(skill-creator) 获取技能创建指引
+        → 写入 skills/weekly-report/SKILL.md
+        → 下一轮对话起，技能目录自动包含 weekly-report
+```
+
 ---
 
 ## 🔒 安全设计
@@ -307,6 +328,7 @@ flowchart TB
 
 - **文件沙盒**：`sandboxedFileOps` 所有路径必须位于 `user.dir` 下，禁止 `delete` 操作
 - **终端白名单**：仅允许配置列表中的命令，防止任意命令执行
+- **技能安全**：技能名仅接受 kebab-case 白名单（`[a-z0-9]+(-[a-z0-9]+)*`），防止路径穿越
 - **凭证隔离**：API Key 通过环境变量注入，不硬编码在源码中
 
 ---
@@ -325,7 +347,7 @@ flowchart TB
 ## 🧪 运行测试
 
 ```bash
-./mvnw test
+mvn test
 ```
 
 ---
@@ -334,13 +356,14 @@ flowchart TB
 
 | 类别 | 技术 |
 |------|------|
-| 框架 | Spring Boot 3.5、Spring AI Alibaba Agent Framework |
+| 框架 | Spring Boot 3.5、Spring AI Alibaba Agent Framework 1.1.2.2 |
 | 大模型 | 阿里云 DashScope（qwen3.8-max） |
 | IM 接入 | 飞书 oapi-sdk 2.5.3（WebSocket 长连接） |
 | 搜索 | Tavily Search API |
-| 网页抓取 | Microsoft Playwright |
-| 文档生成 | Apache POI、Flying Saucer + OpenPDF |
-| 工具库 | Hutool、Lombok |
+| 网页抓取 | Microsoft Playwright 1.50 |
+| 文档生成 | Apache POI 5.3、Flying Saucer + OpenPDF 9.1.22 |
+| 前端 | Vue 3 + Vite + TypeScript（marked / highlight.js / DOMPurify） |
+| 工具库 | Hutool 5.8、Lombok |
 | API 文档 | Knife4j 4.4 |
 
 ---
