@@ -34,6 +34,10 @@ gateway:
     app-id: ${FEISHU_APP_ID}
     app-secret: ${FEISHU_APP_SECRET}
     enabled: true
+web:
+  # Web 聊天通道：enabled=true 且 WEB_ACCESS_PASSWORD 已配置时启用（默认关闭）
+  enabled: true
+  access-password: ${WEB_ACCESS_PASSWORD:}
 tools:
   tavily:
     api-key: ${TAVILY_API_KEY}

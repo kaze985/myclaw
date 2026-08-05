@@ -26,6 +26,7 @@
 | 🧠 **ReAct 智能体** | 基于 Think → Act → Observe 循环，最多 20 步自主推理与工具调用 |
 | 🔧 **11 种内置工具** | 搜索、抓取、下载、终端、文件、Office/PDF 文档生成等 |
 | 💬 **飞书 Gateway** | WebSocket 长连接接入，支持多轮对话与实时思考推送 |
+| 🌐 **Web 聊天界面** | 浏览器直连 Agent，SSE 流式展示思考过程与工具调用，支持 Markdown 与文档产物下载 |
 | 🔒 **安全沙盒** | 文件操作限制在 `user.dir` 内，终端命令白名单管控 |
 | 🌐 **跨平台** | 终端工具自动适配 Windows / Linux |
 | 📖 **API 文档** | 集成 Knife4j，开箱即用的 Swagger UI |
@@ -101,7 +102,8 @@ myclaw/
 │   │   └── model/AgentState.java
 │   ├── gateway/                  # 消息网关
 │   │   ├── channel/              # Channel 抽象 & 消息路由
-│   │   └── feishu/               # 飞书 Channel 实现
+│   │   ├── feishu/               # 飞书 Channel 实现
+│   │   └── web/                  # Web 聊天通道（认证 / SSE / 产物下载）
 │   ├── tool/                     # Agent 工具集
 │   │   ├── search/               # 联网搜索
 │   │   ├── scrape/               # 网页抓取
@@ -113,6 +115,7 @@ myclaw/
 │   └── MyclawApplication.java
 ├── src/main/resources/
 │   └── application.yml           # 应用配置
+├── web/                          # Web 前端工程（Vue 3 + Vite）
 ├── docs/images/                  # README 配图
 └── openspec/                     # OpenSpec 规格与变更记录
 ```
@@ -125,6 +128,7 @@ myclaw/
 
 - **JDK 21+**
 - **Maven 3.9+**（或使用项目自带的 `mvnw`）
+- **Node.js 20+**（构建 Web 前端页面需要）
 - 阿里云 DashScope API Key（通义千问）
 - Tavily API Key（联网搜索，可选）
 - 飞书开放平台应用凭证（飞书接入，可选）
@@ -142,6 +146,7 @@ cd myclaw
 |----------|------|------|
 | `AI_DASHSCOPE_API_KEY` | 阿里云 DashScope API Key | ✅ |
 | `TAVILY_API_KEY` | Tavily 搜索 API Key | 搜索功能需要 |
+| `WEB_ACCESS_PASSWORD` | Web 聊天界面访问密码（与 `web.enabled=true` 配合启用） | Web 界面需要 |
 | `FEISHU_APP_ID` | 飞书应用 App ID | 飞书接入需要 |
 | `FEISHU_APP_SECRET` | 飞书应用 App Secret | 飞书接入需要 |
 
@@ -150,6 +155,7 @@ cd myclaw
 ```powershell
 $env:AI_DASHSCOPE_API_KEY = "sk-xxxxxxxx"
 $env:TAVILY_API_KEY = "tvly-xxxxxxxx"
+$env:WEB_ACCESS_PASSWORD = "your-password"
 $env:FEISHU_APP_ID = "cli_xxxxxxxx"
 $env:FEISHU_APP_SECRET = "xxxxxxxx"
 ```
@@ -159,6 +165,7 @@ $env:FEISHU_APP_SECRET = "xxxxxxxx"
 ```bash
 export AI_DASHSCOPE_API_KEY=sk-xxxxxxxx
 export TAVILY_API_KEY=tvly-xxxxxxxx
+export WEB_ACCESS_PASSWORD=your-password
 export FEISHU_APP_ID=cli_xxxxxxxx
 export FEISHU_APP_SECRET=xxxxxxxx
 ```
@@ -166,6 +173,13 @@ export FEISHU_APP_SECRET=xxxxxxxx
 ### 3. 启动应用
 
 ```bash
+# 1. 构建 Web 前端（首次或前端代码变更后）
+cd web
+npm install
+npm run build
+cd ..
+
+# 2. 启动后端（Maven 会自动将 web/dist 产物复制进静态目录）
 # Windows
 .\mvnw.cmd spring-boot:run
 
@@ -190,6 +204,17 @@ export FEISHU_APP_SECRET=xxxxxxxx
 |------|------|
 | 任意文本 | 与 Agent 多轮对话（保留上下文） |
 | `/new` | 清空上下文，开启全新对话 |
+
+### 5. Web 聊天界面
+
+启用 `web.enabled=true` 并配置 `WEB_ACCESS_PASSWORD` 后，浏览器访问 `http://localhost:8080/api/` 即可进入 Web 聊天界面：
+
+- 输入访问密码登录（HttpOnly cookie 会话，有效期 7 天）
+- SSE 流式展示 Agent 思考过程与工具调用（ReAct 管线），最终回复按 Markdown 渲染、代码高亮
+- Agent 生成的文档产物（PDF/Word/PPT/Excel）在回复中以可下载链接呈现
+- 点击「新建会话」清空上下文；聊天历史保存在浏览器本地（刷新不丢）
+
+> ⚠️ Web 与飞书通道共享同一 Agent 上下文：两端对话互相可见，「新建会话」会同时清空飞书上下文。
 
 ---
 
@@ -228,6 +253,8 @@ tools:
 | `server.port` | `8080` | HTTP 服务端口 |
 | `server.servlet.context-path` | `/api` | 应用上下文路径 |
 | `gateway.feishu.enabled` | `true` | 是否启用飞书 Channel |
+| `web.enabled` | `false` | 是否启用 Web 聊天通道（需同时配置访问密码） |
+| `web.access-password` | — | Web 界面访问密码（`${WEB_ACCESS_PASSWORD}`） |
 | `tools.file.download-dir` | `${user.dir}/tmp/file` | 下载文件存储目录 |
 | `tools.terminal.allowed-commands` | 见上方 | 终端命令白名单 |
 

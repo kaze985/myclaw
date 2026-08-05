@@ -20,7 +20,7 @@ public class AgentMessageRouter implements MessageRouter {
     private static final String CMD_NEW = "/new";
 
     @Override
-    public String route(GatewayMessage message) {
+    public synchronized String route(GatewayMessage message) {
         log.info("Routing message from platform={} sender={}", message.getPlatform(), message.getSenderId());
         String content = message.getContent();
         if (CMD_NEW.equalsIgnoreCase(content.trim())) {
